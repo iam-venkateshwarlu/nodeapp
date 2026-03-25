@@ -28,8 +28,8 @@ pipeline {
     	
     	stage('Docker Build'){
     	steps{
-    	sh 'docker build -t venkatesh1409/mynodeapp:$BUILD_NUMBER .
-'
+    	sh ''' docker build -t venkatesh1409/nodeapp:$BUILD_NUMBER .
+'''
 }
 }
 }
