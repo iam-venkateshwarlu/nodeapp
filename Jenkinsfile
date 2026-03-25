@@ -4,7 +4,7 @@ pipeline {
     stages {
     	stage('Checkout') {
     	     steps {
-    	     	 git 'https://github.com/iam-venkateshwarlu/mynodeapp.git'
+    	     	 git 'https://github.com/iam-venkateshwarlu/nodeapp.git'
     	     	 }
     	     	 }
     	     	 
