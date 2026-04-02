@@ -11,7 +11,12 @@ pipeline {
     }
 
     stages {
-
+        stage('Build') {
+            steps {
+                sh './build.sh'
+            }
+        }
+        /*
         stage('Clone Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/iam-venkateshwarlu/nodeapp.git'
@@ -59,6 +64,7 @@ pipeline {
                 sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
             }
         }
+        */
     }
 
     post {
