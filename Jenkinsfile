@@ -42,6 +42,18 @@ pipeline {
             }
         }
 
+        stage('Docker Tag Image') {
+            steps {
+                sh 'docker tag nodeapp:$BUILD_NUMBER $IMAGE_NAME:v1'
+            }
+        }
+
+        stage('Docker Push Image') {
+            steps {
+                sh 'docker push $IMAGE_NAME:v1'
+            }
+        }
+
     }
 }
 
