@@ -1,9 +1,9 @@
-
 pipeline {
     agent any
 
     environment {
         IMAGE_NAME = "venkatesh1409/nodeapp"
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     tools {
@@ -14,8 +14,8 @@ pipeline {
 
         stage('Clone Code') {
             steps {
-            git branch: 'main', url: 'https://github.com/iam-venkateshwarlu/nodeapp.git'
-             }
+                git branch: 'main', url: 'https://github.com/iam-venkateshwarlu/nodeapp.git'
+            }
         }
 
         stage('Install Dependencies') {
@@ -30,7 +30,7 @@ pipeline {
             }
         }
 
-        stage('Run Build') {
+        stage('Build App') {
             steps {
                 sh 'npm run build'
             }
@@ -38,24 +38,38 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t nodeapp:$BUILD_NUMBER .'
+                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
             }
         }
 
-        stage('Docker Tag Image') {
+        stage('Docker Login') {
             steps {
-                sh 'docker tag nodeapp:$BUILD_NUMBER $IMAGE_NAME:v1'
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub',
+                    usernameVariable: 'USER',
+                    passwordVariable: 'PASS')]) {
+
+                    sh 'docker login -u $USER -p $PASS'
+                }
             }
         }
 
         stage('Docker Push Image') {
             steps {
-                sh 'docker push $IMAGE_NAME:v1'
+                sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
             }
         }
+    }
 
+    post {
+        always {
+            sh 'docker system prune -f'
+        }
+        success {
+            echo 'Pipeline completed successfully'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
     }
 }
-
-
-    	
