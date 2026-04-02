@@ -6,6 +6,10 @@ pipeline {
         IMAGE_NAME = "venkatesh1409/nodeapp"
     }
 
+    tools {
+        nodejs 'NodeJS-18'
+    }
+
     stages {
 
         stage('Clone Code') {
