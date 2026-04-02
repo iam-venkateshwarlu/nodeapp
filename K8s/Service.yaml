@@ -6,7 +6,7 @@ spec:
   selector:
     app: nodeapp
   ports:
-    - protocol: TCP
-      port: 80
+    - port: 80
       targetPort: 3000
-  type: ClusterIP
+      nodePort: 30007
+  type: NodePort
