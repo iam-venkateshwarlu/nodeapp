@@ -4,6 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "venkatesh1409/nodeapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
+        SONAR_AUTH_TOKEN = credentials('sonar-token')
     }
 
     tools {
@@ -11,12 +12,6 @@ pipeline {
     }
 
     stages {
-        stage('Build') {
-            steps {
-                sh './build.sh'
-            }
-        }
-        /*
         stage('Clone Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/iam-venkateshwarlu/nodeapp.git'
@@ -32,6 +27,20 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh 'npm test || true'
+            }
+        }
+        
+        stage('SonarQube Scan') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                sh '''
+                sonar-scanner \
+                -Dsonar.projectKey=mouniCorner \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=http://172.17.0.1:9000 \
+                -Dsonar.login=$SONAR_AUTH_TOKEN
+                '''
+               }
             }
         }
 
@@ -64,7 +73,6 @@ pipeline {
                 sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
             }
         }
-        */
     }
 
     post {
