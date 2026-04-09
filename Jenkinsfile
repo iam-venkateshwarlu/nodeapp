@@ -32,15 +32,14 @@ pipeline {
         
         stage('SonarQube Scan') {
             steps {
-                script {
-                    def scannerHome = tool 'sonar-scanner'
-                    withSonarQubeEnv('SonarQube') {
+                withSonarQubeEnv('SonarQube') {
+                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_AUTH_TOKEN')]) {
                     sh """
-                    ${scannerHome}/bin/sonar-scanner \
-                    -Dsonar.projectKey=mouniCorner \
+                    sonar-scanner \
+                    -Dsonar.projectKey=nodeapp \
                     -Dsonar.sources=. \
-                    -Dsonar.host.url=http://172.17.0.1:9000 \
-                    -Dsonar.login=${SONAR_AUTH_TOKEN}
+                    -Dsonar.host.url=http://host.docker.internal:9000 \
+                   -Dsonar.login=$SONAR_AUTH_TOKEN
                     """
                     }
                 }
