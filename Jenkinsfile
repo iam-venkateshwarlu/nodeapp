@@ -4,7 +4,6 @@ pipeline {
     environment {
         IMAGE_NAME = "venkatesh1409/nodeapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
-        SONAR_AUTH_TOKEN = credentials('sonar-token')
     }
 
     tools {
@@ -33,14 +32,15 @@ pipeline {
         stage('SonarQube Scan') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh '''
-                    sonar-scanner \
-                      -Dsonar.projectKey=nodeapp \
-                      -Dsonar.sources=. \
-                      -Dsonar.host.url=http://host.docker.internal:9000 \
-                      -Dsonar.login=$SONAR_AUTH_TOKEN
-                    '''
-                    
+                    withCredentials([string(credentialsId: 'sonar-Token', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                        sonar-scanner \
+                          -Dsonar.projectKey=nodeapp \
+                          -Dsonar.sources=. \
+                          -Dsonar.host.url=http://host.docker.internal:9000 \
+                          -Dsonar.login=$SONAR_TOKEN
+                        '''
+                    }
                 }
             }
         }
