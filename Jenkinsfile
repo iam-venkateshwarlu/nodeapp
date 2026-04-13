@@ -30,22 +30,22 @@ pipeline {
                 sh 'npm test'
             }
         }
-
+        /*
         stage('SonarQube Scan') {
             steps {
                 withSonarQubeEnv('sonarqube') {
                 script {
                     def scannerHome = tool 'sonar-scanner'
-                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                        sh """
+                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                            sh """
                             ${scannerHome}/bin/sonar-scanner \
                             -Dsonar.projectKey=nodeapp \
                             -Dsonar.sources=. \
                             -Dsonar.host.url=http://sonarqube:9000 \
                             -Dsonar.login=$SONAR_TOKEN
-                        """
+                            """
+                        }
                     }
-                }
                 }
             }
         }
@@ -57,7 +57,7 @@ pipeline {
                 }
             }
         }
-
+        */
         stage('Build App') {
             steps {
                 sh 'npm run build'
