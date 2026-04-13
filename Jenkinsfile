@@ -1,16 +1,18 @@
 pipeline {
     agent any
 
-    environment {
-        IMAGE_NAME = "venkatesh1409/nodeapp"
-        IMAGE_TAG = "${BUILD_NUMBER}"
-    }
-
     tools {
         nodejs 'NodeJS-18'
     }
 
+    environment {
+        IMAGE_NAME = "venkatesh1409/nodeapp"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        SONAR_HOST_URL = "http://sonarqube:9000"
+    }
+
     stages {
+
         stage('Clone Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/iam-venkateshwarlu/nodeapp.git'
@@ -25,22 +27,30 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh 'npm test || true'
+                sh 'npm test'
             }
         }
-        
+
         stage('SonarQube Scan') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    withCredentials([string(credentialsId: 'sonar-Token', variable: 'SONAR_TOKEN')]) {
+                withSonarQubeEnv('sonarqube') {
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                         sh '''
                         sonar-scanner \
                           -Dsonar.projectKey=nodeapp \
                           -Dsonar.sources=. \
-                          -Dsonar.host.url=http://host.docker.internal:9000 \
+                          -Dsonar.host.url=$SONAR_HOST_URL \
                           -Dsonar.login=$SONAR_TOKEN
                         '''
                     }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
@@ -53,7 +63,10 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                sh '''
+                docker build -t $IMAGE_NAME:$IMAGE_TAG .
+                docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:latest
+                '''
             }
         }
 
@@ -64,14 +77,17 @@ pipeline {
                     usernameVariable: 'USER',
                     passwordVariable: 'PASS')]) {
 
-                    sh 'docker login -u $USER -p $PASS'
+                    sh 'echo $PASS | docker login -u $USER --password-stdin'
                 }
             }
         }
 
         stage('Docker Push Image') {
             steps {
-                sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
+                sh '''
+                docker push $IMAGE_NAME:$IMAGE_TAG
+                docker push $IMAGE_NAME:latest
+                '''
             }
         }
     }
@@ -81,10 +97,10 @@ pipeline {
             sh 'docker system prune -f'
         }
         success {
-            echo 'Pipeline completed successfully'
+            echo '\u2705 Pipeline completed successfully'
         }
         failure {
-            echo 'Pipeline failed.'
+            echo '\u274c Pipeline failed.'
         }
     }
 }
