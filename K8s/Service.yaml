@@ -6,7 +6,7 @@ spec:
   selector:
     app: nodeapp
   ports:
-    - port: 80
+    - name: http
+      port: 80
       targetPort: 3000
-      nodePort: 30007
   type: LoadBalancer
