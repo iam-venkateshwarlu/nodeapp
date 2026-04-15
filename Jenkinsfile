@@ -8,9 +8,9 @@ pipeline {
     environment {
         IMAGE_NAME = "venkatesh1409/nodeapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
-        SONAR_HOST_URL = "http://sonarqube:9000"
-        AWS_REGION = "us-south-1"
-        ECR_REPO = "465528543053.dkr.ecr.ap-south-1.amazonaws.com/mounicorner"
+        AWS_REGION = "ap-south-1"
+        ECR_REGISTRY = "465528543053.dkr.ecr.ap-south-1.amazonaws.com"
+        ECR_REPO = "mounicorner"
     }
 
     stages {
@@ -32,34 +32,7 @@ pipeline {
                 sh 'npm test'
             }
         }
-        /*
-        stage('SonarQube Scan') {
-            steps {
-                withSonarQubeEnv('sonarqube') {
-                script {
-                    def scannerHome = tool 'sonar-scanner'
-                        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                            sh """
-                            ${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=nodeapp \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=http://sonarqube:9000 \
-                            -Dsonar.login=$SONAR_TOKEN
-                            """
-                        }
-                    }
-                }
-            }
-        }
 
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 2, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-        */
         stage('Build App') {
             steps {
                 sh 'npm run build'
@@ -75,7 +48,7 @@ pipeline {
             }
         }
 
-        stage('Docker Login') {
+        stage('Docker Login (DockerHub)') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub',
@@ -87,22 +60,43 @@ pipeline {
             }
         }
 
-         stage('Login to ECR') {
+        stage('Login to ECR') {
             steps {
-                withAWS(credentials: 'aws-creds', region: "${AWS_REGION}") {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-creds',
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
                     sh '''
+                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+
                     aws ecr get-login-password --region $AWS_REGION \
-                    | docker login --username AWS --password-stdin $ECR_REPO
+                    | docker login --username AWS --password-stdin $ECR_REGISTRY
                     '''
                 }
             }
         }
 
-        stage('Docker Push Image') {
+        stage('Tag Image for ECR') {
             steps {
                 sh '''
+                docker tag $IMAGE_NAME:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
+                docker tag $IMAGE_NAME:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPO:latest
+                '''
+            }
+        }
+
+        stage('Push Images') {
+            steps {
+                sh '''
+                # DockerHub
                 docker push $IMAGE_NAME:$IMAGE_TAG
-                docker push $ECR_REPO:latest
+                docker push $IMAGE_NAME:latest
+
+                # ECR
+                docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
+                docker push $ECR_REGISTRY/$ECR_REPO:latest
                 '''
             }
         }
