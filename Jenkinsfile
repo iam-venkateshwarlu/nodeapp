@@ -9,6 +9,8 @@ pipeline {
         IMAGE_NAME = "venkatesh1409/nodeapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
         SONAR_HOST_URL = "http://sonarqube:9000"
+        AWS_REGION = "us-south-1"
+        ECR_REPO = "465528543053.dkr.ecr.ap-south-1.amazonaws.com/mounicorner"
     }
 
     stages {
@@ -85,11 +87,22 @@ pipeline {
             }
         }
 
+         stage('Login to ECR') {
+            steps {
+                withAWS(credentials: 'aws-creds', region: "${AWS_REGION}") {
+                    sh '''
+                    aws ecr get-login-password --region $AWS_REGION \
+                    | docker login --username AWS --password-stdin $ECR_REPO
+                    '''
+                }
+            }
+        }
+
         stage('Docker Push Image') {
             steps {
                 sh '''
                 docker push $IMAGE_NAME:$IMAGE_TAG
-                docker push $IMAGE_NAME:latest
+                docker push $ECR_REPO:latest
                 '''
             }
         }
